@@ -74,7 +74,7 @@ def initialize():
     update_user_competition_rank(6,1,54)
     update_user_competition_rank(7,1,30)
     update_user_competition_rank(8,1,29)
-    update_user_competition_rank(9,1,44)
+    update_user_competition_rank(9,1,47)
     update_user_competition_rank(10,1,49)
     update_user_competition_rank(11,1,51)
     update_user_competition_rank(12,1,62)
@@ -276,5 +276,24 @@ def get_user_overall_rank_and_position_command(user_id):
         print(f"User {user_id} does not exist.")
     else:
         print(f"User {user_id} has an overall rank of {overall_rank} and is positioned at {overall_rank}.")
+
+@click.argument('user_id', type=int)
+def get_notificationsforuser(user_id):
+    user = User.query.get(user_id)
+    if user:
+        if user.message:
+            click.echo(f"Your notifications:\n{user.message}")
+        else:
+            click.echo("No notifications for this user.")
+    else:
+        click.echo("User not found.")
+
+@click.option('--user_id', prompt='User ID', help='Enter the user ID to retrieve overall rank')
+def get_user_rank(user_id):
+    rank = get_user_overall_rank(user_id)
+    if rank is not None:
+        click.echo(f"User {user_id} overall rank is: {rank}")
+    else:
+        click.echo(f"User {user_id} not found or has no overall rank.")
 
 app.cli.add_command(rank_cli)
