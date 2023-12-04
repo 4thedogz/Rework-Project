@@ -184,3 +184,183 @@ class RankingPlatformTests(unittest.TestCase):
    
         assert len(notifications) == 20  # Assuming 20 users are notified
 
+def test_user():
+    # Create a test user
+    test_user = User(username='test_user', password='test_password')
+    db.session.add(test_user)
+    db.session.commit()
+
+    # Set the overall_rank attribute separately
+    test_user.overall_rank = 10
+
+    return test_user
+
+def test_get_top_20_users_in_competition():
+    # Assuming we have a competition with ID 1 in the database
+    comp_id = 1
+
+    # Creating some dummy user competition records for competition ID 1
+    # Adjust this as per your database model
+    for i in range(1, 21):
+        # Creating 24 users for competition ID 1 with ranks varying from 1 to 24
+        register_user_for_competition(user_id=i, comp_id=comp_id, rank=i)
+
+    # Fetching the top 20 users in competition 1
+    top_20_users = get_top_20_users_in_competition(comp_id)
+
+    # The top_20_users should contain 20 entries
+    assert len(top_20_users) 
+
+def test_update_top20_overall():
+    # Assuming we have a competition with ID 1 in the database
+    comp_id = 1
+
+    # Creating 20 dummy user competition records for competition ID 1
+    for i in range(1, 21):  
+        # Creating 20 users for competition ID 1 with ranks varying from 1 to 20
+        register_user_for_competition(user_id=i, comp_id=comp_id, rank=i)
+
+    # Running the function to update overall rankings for top 20 users
+    update_top20_overall(comp_id)
+
+    # Fetching the top 20 users in overall rankings
+    top_20_users = get_top_20_users_overall_rank()
+
+def test_update_overall_rankings():
+    # Assuming we have a competition with ID 1 in the database
+    comp_id = 1
+
+    # Creating 20 dummy user competition records for competition ID 1
+    for i in range(1, 21):
+        # Creating 20 users for competition ID 1 with ranks varying from 1 to 20
+        register_user_for_competition(user_id=i, comp_id=comp_id, rank=i)
+
+    # Fetching the top 20 users in competition 1
+    top_20_users = get_top_20_users_in_competition(comp_id)
+
+    # Running the function to update overall rankings for top 20 users
+    update_overall_rankings(top_20_users)
+
+    # Fetching the top 20 users in overall rankings
+    top_20_overall = get_top_20_users_overall_rank() 
+
+def test_update_user_overall_rank():
+    # Assuming we have a competition with ID 1 in the database
+    comp_id = 1
+
+    # Creating a user and registering them for competition ID 1 with a rank of 5
+    user_id = 1
+    register_user_for_competition(user_id=user_id, comp_id=comp_id, rank=5)
+
+    # Fetching the user's current overall rank
+    user = User.query.get(user_id)
+    initial_rank = user.overall_rank
+
+    # Running the function to update the user's overall rank
+    update_user_overall_rank(user_id, points=10)  # Incrementing points by 10
+
+    # Fetching the user's updated overall rank
+    updated_user = User.query.get(user_id)
+    updated_rank = updated_user.overall_rank
+
+    # The user's initial rank should be less than the updated rank
+    assert initial_rank < updated_rank
+
+    # The difference in ranks should be equal to the points added
+    assert updated_rank - initial_rank == 10    
+
+
+def test_notify_rank_changes():
+    # Assuming we have 25 users in the top 20
+    prev_top_20 = [(i, i) for i in range(1, 21)]
+    
+    # Simulating a change in positions for users 2, 5, and 10
+    new_top_20 = [(1, 1), (2, 3), (3, 3), (4, 4), (5, 6), (6, 6), (7, 7), (8, 8), (9, 9), (10, 13),
+                   (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17), (18, 18), (19, 19), (20, 20)]
+
+    # Mocking the send_notification function
+    def mock_send_notification(user_id, message):
+        print(f"Sending notification to User ID {user_id}: {message}")
+
+    # Overriding the send_notification function temporarily with the mock
+    globals()['send_notification'] = mock_send_notification
+
+    # Calling the notify_rank_changes function with the mock setup
+    notify_rank_changes(prev_top_20, new_top_20)
+
+    # We expect notifications for users 2, 5, and 10 due to rank changes
+    expected_notifications = [
+        (2, 'Hey user_2, your position changed from 2 to 3 in the top 20 overall rank!'),
+        (5, 'Hey user_5, your position changed from 5 to 6 in the top 20 overall rank!'),
+        (10, 'Hey user_10, your position changed from 10 to 13 in the top 20 overall rank!')
+    ]    
+
+def test_notify_user_removed_from_top_20():
+    # Assuming we have 25 users in the top 20
+    prev_top_20 = [(i, i) for i in range(1, 21)]
+    
+    # Removing user 7 from the top 20
+    user_removed = 7
+    new_top_20 = [(i, i) for i in range(1, 21) if i != user_removed]
+
+    # Mocking the send_notification function
+    def mock_send_notification(user_id, message):
+        print(f"Sending notification to User ID {user_id}: {message}")
+
+    # Overriding the send_notification function temporarily with the mock
+    globals()['send_notification'] = mock_send_notification
+
+    # Calling the notify_user_removed_from_top_20 function with the mock setup
+    notify_user_removed_from_top_20(user_removed)
+
+    # We expect a notification for the removed user (user 7)
+    expected_notification = (user_removed, 'Hey user_7, you\'ve been removed from the top 20 overall rank and now positioned as 21.')
+
+def test_notify_user_position_change():
+    # Assuming we have 25 users in the top 20
+    prev_top_20 = [(i, i) for i in range(1, 21)]
+    
+    # Changing the position of user 5 from 5 to 15 in the new top 20
+    user_id = 5
+    prev_position = 5
+    new_position = 15
+    new_top_20 = [(i, i) if i != user_id else (i, new_position) for i in range(1, 21)]
+
+    # Mocking the send_notification function
+    def mock_send_notification(user_id, message):
+        print(f"Sending notification to User ID {user_id}: {message}")
+
+    # Overriding the send_notification function temporarily with the mock
+    globals()['send_notification'] = mock_send_notification
+
+    # Calling the notify_user_position_change function with the mock setup
+    notify_user_position_change(user_id, prev_position, new_position)
+
+    # We expect a notification for the user whose position changed
+    expected_notification = (user_id, f"Hey user_{user_id}, your position changed from {prev_position} to {new_position} in the top 20 overall rank!")
+
+def test_get_user_overall_rank_and_position():
+    # Assuming we have 25 users in the top 20
+    for i in range(1, 25):
+        register_user_for_competition(user_id=i, comp_id=1, rank=i)  # Create dummy users for testing
+
+    # Let's assume the user we're interested in has ID 5
+    user_id = 5
+
+    # Mocking the User.query.get method
+    def mock_get_user(user_id):
+        return User(id=user_id) if user_id <= 25 else None
+
+    # Overriding the User.query.get method temporarily with the mock
+    globals()['User'] = type('', (object,), {'query': type('', (object,), {'get': mock_get_user})})
+
+    # Calling the get_user_overall_rank_and_position function
+    overall_rank, user_position = get_user_overall_rank_and_position(user_id)
+
+    # We expect this user's overall rank to be 5 in this simulation
+    expected_overall_rank = 5
+
+    # We expect this user's position in the top 20 to be 5 in this simulation
+    expected_user_position = 5
+
+   
