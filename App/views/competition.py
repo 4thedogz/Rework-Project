@@ -72,3 +72,32 @@ def get_competition(id):
 def get_rankings(id):
     ranks = get_user_rankings(id)
     return (jsonify(ranks),200)
+
+#route to add result
+@comp_views.route('/competitions/results', methods=['POST'])
+def add_competition_results():
+    data = request.json
+
+    user_id = data.get('user_id')
+    comp_id = data.get('comp_id')
+    rank = data.get('rank')
+
+    if user_id is None or comp_id is None or rank is None:
+        return jsonify({'error': 'Missing required parameters'}), 400
+
+    result_added = add_results(user_id, comp_id, rank)
+
+    if result_added:
+        return jsonify({'message': 'results added successfully'}), 201
+    else:
+        return jsonify({'error': 'Error adding results'}), 500
+
+
+@comp_views.route('/top_20_users', methods=['GET'])
+def get_top_20_users_route():
+    user_details = get_top_20_users_api()
+
+    if user_details:
+        return jsonify({'top_20_users': user_details}), 200
+    else:
+        return jsonify({'error': 'Error retrieving top 20 users'}), 500
