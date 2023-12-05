@@ -5,7 +5,7 @@ class Competition(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name =  db.Column(db.String, nullable=False, unique=True)
     date = db.Column(db.DateTime, default= datetime.utcnow)
-    # rank = db.Column(db.Integer)
+    rank = db.Column(db.Integer)
     location = db.Column(db.String(120), nullable=False)
 
     hosts = db.relationship("CompetitionHost", lazy=True, backref=db.backref("hosts"), cascade="all, delete-orphan")

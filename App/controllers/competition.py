@@ -42,7 +42,7 @@ def add_results(user_id, comp_id, rank):
 
         try:
             db.session.add(compParticipant)
-            db.session.commit 
+            db.session.commit()
             print("successfully added user to comp")
             return True
         except Exception as e:
