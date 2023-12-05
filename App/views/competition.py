@@ -15,7 +15,8 @@ from App.controllers import (
     get_competition_by_id,
     add_results,
     get_user_rankings,
-    add_user_to_comp
+    add_user_to_comp,
+    create_user, register_user_for_competition, update_user_competition_rank, manage_top_20_and_notify, update_top20_overall, notify_rank_changes, get_top_20_users_api
 )
 
 
@@ -30,6 +31,7 @@ def get_competitons():
 
 ##add new competition to the db
 @comp_views.route('/competitions', methods=['POST'])
+@jwt_required()
 def add_new_comp():
     data = request.json
     response = create_competition(data['name'], data['location'])
@@ -39,12 +41,23 @@ def add_new_comp():
 
 
 @comp_views.route('/competitions/user', methods=['POST'])
+@jwt_required()
 def add_comp_user():
     data = request.json
-    response = add_new_user()
-    if response: 
-        return (jsonify({'message': f"user added to competition"}),201)
-    return (jsonify({'error': f"error adding user to competition"}),500)
+
+    user_id = data.get('user_id')
+    comp_id = data.get('comp_id')
+    rank = data.get('rank')
+
+    if user_id is None or comp_id is None or rank is None:
+        return jsonify({'error': 'Missing required parameters'}), 400
+
+    result = add_user_to_comp(user_id, comp_id, rank)
+
+    if result:
+        return jsonify({'message': 'User added to competition successfully'}), 201
+    else:
+        return jsonify({'error': 'Error adding user to competition. User may already be added to this competition.'}), 500
 
 @comp_views.route('/competitions/<int:id>', methods=['GET'])
 def get_competition(id):
@@ -54,19 +67,8 @@ def get_competition(id):
         return jsonify({'error': 'competition not found'}), 404 
     return (jsonify(competition.toDict()),200)
 
-@comp_views.route('/competitions/results', methods=['POST'])
-def add_comp_results():
-    data = request.json
-    response = add_user_to_comp(data['user_id'],data['comp_id'], data['rank'])
-    if response:
-        return (jsonify({'message': f"results added successfully"}),201)
-    return (jsonify({'error': f"error adding results"}),500)
 
 @comp_views.route('/rankings/<int:id>', methods =['GET'])
 def get_rankings(id):
     ranks = get_user_rankings(id)
     return (jsonify(ranks),200)
-
-
-
-
